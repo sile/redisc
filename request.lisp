@@ -66,7 +66,7 @@
     (#.+REPLY_BULK+    (values (read-bulk in) t))
     (#.+REPLY_MULTI+   (values (read-multi in) t))))
 
-(defun request (connection command &rest args &aux (out (usocket:socket-stream connection)))
+(defun request (connection command args &aux (out (usocket:socket-stream connection)))
   (write-sequence (build-request command args) out)
   (force-output out)
   

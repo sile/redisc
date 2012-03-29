@@ -11,4 +11,5 @@
   :components ((:file "package")
                (:file "util")
                (:file "request")
+               (:file "command")
                (:file "redisc")))

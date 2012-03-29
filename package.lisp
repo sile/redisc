@@ -1,8 +1,18 @@
 (defpackage :redisc
   (:use :common-lisp)
-  (:shadow :common-lisp close)
+  (:shadow :common-lisp close set get)
   (:export connect
-           close))
+           close
+           
+           *varsion* ;; version of redis
+           *default-connection* 
+
+           ;; command: key
+           del exists expire expireat keys
+
+           ;; command: string
+           set get
+           ))
 (in-package :redisc)
 
 (deftype octet () '(unsigned-byte 8))
