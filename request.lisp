@@ -71,5 +71,10 @@
   (force-output out)
   
   (read-reply out))
-  
-    
+
+(defun pipeline-request (connection &rest requests &aux (out (usocket:socket-stream connection)))
+  (loop FOR (command . args) IN requests
+        DO (write-sequence (build-request command args) out))
+  (force-output out)
+  (loop REPEAT (length requests)
+        COLLECT (multiple-value-list (read-reply out))))
