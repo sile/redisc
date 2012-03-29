@@ -1,4 +1,6 @@
 (defpackage :redisc
   (:use :common-lisp)
-  (:export ))
+  (:shadow :common-lisp close)
+  (:export connect
+           close))
 (in-package :redisc)
