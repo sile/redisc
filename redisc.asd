@@ -9,4 +9,5 @@
   :serial t
   :depends-on (:usocket)
   :components ((:file "package")
+               (:file "util")
                (:file "redisc")))
