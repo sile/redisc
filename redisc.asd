@@ -10,4 +10,5 @@
   :depends-on (:usocket)
   :components ((:file "package")
                (:file "util")
+               (:file "request")
                (:file "redisc")))
