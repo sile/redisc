@@ -30,6 +30,12 @@
            llen lpop lpush lpushx lrange
            lrem lset ltrim rpop rpoplpush
            rpush rpushx
+
+           ;; command: set
+           sadd scard sdiff sdiffstore
+           sinter sinterstore sismember smembers
+           smove spop srandmember srem 
+           sunion sunionstore
            ))
 (in-package :redisc)
 
