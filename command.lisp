@@ -2,14 +2,23 @@
 
 (defparameter *default-connection* nil)
 
+
+(defun name-to-command (name &aux (name (symbol-name name)))
+  (let ((p (position #\- name)))
+    (if (null p)
+        (list name)
+      (list (subseq name 0 p) (subseq name (1+ p))))))
+
 ;; TODO: redisのドキュメントを付与する
 (defmacro defcmd (name arity result-type &key vary)
   (let ((args (loop REPEAT arity COLLECT (gensym))))
-    `(defun ,name (,@args ,@(if vary '(&rest v) ()) &aux (connection *default-connection*))
-       (multiple-value-bind (value ok) (request connection ,(symbol-name name) 
-                                                ,(if vary
-                                                     `(nconc (list ,@args) v)
-                                                   `(list ,@args)))
+    ;; TODO: いろいろ整理
+    `(defun ,name (,@args ,@(if vary '(&rest v) ()) &aux (connection *default-connection*)) 
+       (multiple-value-bind (value ok) (request connection ,(car (name-to-command name))
+                                                (cl:append ',(cdr (name-to-command name))
+                                                       ,(if vary
+                                                            `(nconc (list ,@args) v)
+                                                          `(list ,@args))))
          (if (not ok)
              (values value ok)
            (values (convert ,result-type value) ok))))))

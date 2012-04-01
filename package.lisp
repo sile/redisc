@@ -1,7 +1,7 @@
 (defpackage :redisc
   (:use :common-lisp)
   (:shadow :common-lisp close set get sort type
-                        append)
+                        append time)
   (:export connect
            close
            
@@ -54,6 +54,11 @@
            
            ;; connection
            auth echo ping quit select
+
+           ;; server
+           bgrewriteaof bgsave config-get config-set config-resetstat
+           dbsize debug-object debug-segfault flushall flushdb 
+           info lastsave #|monitor|# save shutdown slaveof slowlog sync time
            ))
 (in-package :redisc)
 
