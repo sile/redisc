@@ -20,6 +20,10 @@
            mget mset msetnx psetex set setbit
            setex setnx setrange strlen
            
+           ;; command: hash
+           hdel hexists hget hgetall
+           hincrby hincrbyfloat hkeys hlen 
+           hmget hmset hset hsetnx hvals
            ))
 (in-package :redisc)
 
