@@ -46,6 +46,9 @@
            ;; command Pub/Sub
            psubscribe publish punsubscribe
            subscribe unsubscribe
+           
+           ;; command transaction
+           discard exec multi unwatch watch
            ))
 (in-package :redisc)
 
