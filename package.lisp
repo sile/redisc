@@ -49,6 +49,11 @@
            
            ;; command transaction
            discard exec multi unwatch watch
+
+           ;; scripting
+           
+           ;; connection
+           auth echo ping quit select
            ))
 (in-package :redisc)
 
