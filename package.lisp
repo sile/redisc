@@ -42,6 +42,10 @@
            zinterstore zrange zrangebyscore
            zrank zrem zremrangebyrank zremrangebyscore zrevrange
            zrevrangebyscore zrevrank zscore zunionstore
+           
+           ;; command Pub/Sub
+           psubscribe publish punsubscribe
+           subscribe unsubscribe
            ))
 (in-package :redisc)
 
