@@ -16,4 +16,4 @@
 (defcmd renamenx 2 :boolean)
 (defcmd sort 1 :list :vary t)
 (defcmd ttl 1 :integer)
-(defcmd type 1 :status)
+(defcmd type 1 :status)  ; TODO: return keyword instead of string

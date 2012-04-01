@@ -8,7 +8,7 @@
     `(defun ,name (,@args ,@(if vary '(&rest v) ()) &aux (connection *default-connection*))
        (multiple-value-bind (value ok) (request connection ,(symbol-name name) 
                                                 ,(if vary
-                                                     `(append (list ,@args) v)
+                                                     `(nconc (list ,@args) v)
                                                    `(list ,@args)))
          (if (not ok)
              (values value ok)
@@ -25,7 +25,4 @@
     (:ok     (string= "OK" value)) ; TODO: assert
     ))
 
-;; string
-(defcmd set 2 :ok)
-(defcmd get 1 :string)
 

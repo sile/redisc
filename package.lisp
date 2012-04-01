@@ -1,6 +1,7 @@
 (defpackage :redisc
   (:use :common-lisp)
-  (:shadow :common-lisp close set get sort type)
+  (:shadow :common-lisp close set get sort type
+                        append)
   (:export connect
            close
            
@@ -14,7 +15,11 @@
            ttl type
 
            ;; command: string
-           set get
+           append decr decrby get getbit
+           getrange getset incr incrby incrbyfloat
+           mget mset msetnx psetex set setbit
+           setex setnx setrange strlen
+           
            ))
 (in-package :redisc)
 
@@ -23,3 +28,6 @@
 
 (defparameter *delim* 
   (map 'octets #'char-code '(#\Return #\Newline)))
+
+;; TODO: pipeline対応
+;; (pipe (set ..) (get ...) (expire ...))
