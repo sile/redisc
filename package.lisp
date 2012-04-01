@@ -36,6 +36,12 @@
            sinter sinterstore sismember smembers
            smove spop srandmember srem 
            sunion sunionstore
+
+           ;; command sorted set
+           zadd zcard zcount zincrby
+           zinterstore zrange zrangebyscore
+           zrank zrem zremrangebyrank zremrangebyscore zrevrange
+           zrevrangebyscore zrevrank zscore zunionstore
            ))
 (in-package :redisc)
 

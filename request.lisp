@@ -5,10 +5,11 @@
    'octets
    (loop FOR a IN args
          COLLECT (etypecase a
+                   (list    (apply #'args-to-octets a))
+                   (symbol  (string-to-octets (symbol-name a)))
                    (integer (string-to-octets (princ-to-string a)))
                    (string  (string-to-octets a))
-                   (octets  a)
-                   (list    (apply #'args-to-octets a))))))
+                   (octets  a)))))
 
 (defun build-one-arg (arg &aux (octets (args-to-octets arg)))
   (list "$" (length octets) *delim* octets *delim*))
