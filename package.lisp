@@ -24,6 +24,12 @@
            hdel hexists hget hgetall
            hincrby hincrbyfloat hkeys hlen 
            hmget hmset hset hsetnx hvals
+
+           ;; command: list
+           blpop brpop brpoplpush lindex linsert
+           llen lpop lpush lpushx lrange
+           lrem lset ltrim rpop rpoplpush
+           rpush rpushx
            ))
 (in-package :redisc)
 
