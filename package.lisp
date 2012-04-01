@@ -1,6 +1,6 @@
 (defpackage :redisc
   (:use :common-lisp)
-  (:shadow :common-lisp close set get)
+  (:shadow :common-lisp close set get sort type)
   (:export connect
            close
            
@@ -9,6 +9,9 @@
 
            ;; command: key
            del exists expire expireat keys
+           move object persist pexpire pexpireat
+           pttl randomkey rename renamenx sort
+           ttl type
 
            ;; command: string
            set get

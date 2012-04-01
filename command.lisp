@@ -20,12 +20,10 @@
     (:string value) ; TODO: assert
     (:integer value) ; TODO: assert
     (:boolean (ecase value (1 t) (0 nil)))
+    (:list value)
+    (:status value)
     (:ok     (string= "OK" value)) ; TODO: assert
     ))
-
-;; key
-(defcmd del 1 :integer :vary t)
-(defcmd exists 1 :boolean)
 
 ;; string
 (defcmd set 2 :ok)
