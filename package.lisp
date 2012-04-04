@@ -1,11 +1,19 @@
 (defpackage :redisc
   (:use :common-lisp)
   (:shadow :common-lisp close set get sort type
-                        append time)
-  (:export connect
-           close
+                        append time apropos apropos-list)
+  (:export connect close
+           with-connect
+           q q* q@ 
+           multi multi* multi@ 
+           pipe pipe* pipe@
+           with-watch 
+
+           apropos
+           apropos-list
+           desc)
            
-           *varsion* ;; version of redis
+  (:export *varsion* ;; version of redis
            *default-connection* 
 
            ;; command: key
@@ -68,5 +76,11 @@
 (defparameter *delim* 
   (map 'octets #'char-code '(#\Return #\Newline)))
 
-;; TODO: pipeline対応
-;; (pipe (set ..) (get ...) (expire ...))
+(deftype exec-mode () '(member :single :pipe :multi :watch))
+
+;; TODO: 別のファイルに移動
+(defstruct connection
+  (socket    t :type usocket:stream-usocket)
+  (exec-mode t :type exec-mode))
+
+;; TODO: 作成日時やドキュメントのバージョンを残しておく
