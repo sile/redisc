@@ -12,6 +12,7 @@
                (:file "util")
                (:file "request")
                (:file "command")
+               #|
                (:file "command-keys")
                (:file "command-strings")
                (:file "command-hashes")
@@ -23,4 +24,5 @@
                (:file "command-scripting")
                (:file "command-connection")
                (:file "command-server")
+               |#
                (:file "redisc")))

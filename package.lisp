@@ -1,7 +1,9 @@
 (defpackage :redisc
   (:use :common-lisp)
-  (:shadow :common-lisp close set get sort type
-                        append time apropos apropos-list)
+  (:shadow :common-lisp close ;set get sort type
+                        ;append time 
+           apropos apropos-list
+           )
   (:export connect close
            with-connect
            q q* q@ 
@@ -11,10 +13,16 @@
 
            apropos
            apropos-list
-           desc)
-           
+           desc
+
+           *default-connection*
+
+           *varsion* ;; version of redis client
+           )
+  
+  #+C
   (:export *varsion* ;; version of redis
-           *default-connection* 
+           
 
            ;; command: key
            del exists expire expireat keys

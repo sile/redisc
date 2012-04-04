@@ -67,11 +67,11 @@
     (#.+REPLY_BULK+    (values (read-bulk in) t))
     (#.+REPLY_MULTI+   (values (read-multi in) t))))
 
-(defun request (connection command args &aux (out (usocket:socket-stream connection)))
+(defun request (connection command args &key pipe &aux (out (usocket:socket-stream connection)))
   (write-sequence (build-request command args) out)
-  (force-output out)
-  
-  (read-reply out))
+  (unless pipe
+    (force-output out)
+    (read-reply out)))
 
 (defun pipeline-request (connection &rest requests &aux (out (usocket:socket-stream connection)))
   (loop FOR (command . args) IN requests
