@@ -95,6 +95,23 @@
     (loop REPEAT (length commands)
           COLLECT (multiple-value-list (read-reply out))))) ; 多値の代わりにエラーオブジェクトを返しても良いかもしれない
 
+(defun multi (commands &key (connection *default-connection*))
+  (let ((*default-connection* connection))
+    (q :multi)
+    (pipe commands)
+    (q :exec)))
+
+(defmacro watch-multi ((&rest watch-keys) commands-exp &key (connection *default-connection*))
+  `(progn (q* :watch ,watch-keys :connection ,connection) ; TODO: connection gensym
+          (multi ,commands-exp :connection ,connection)))
+
+(defmacro multi* (commands &key (connection *default-connection*) watch)
+  (if watch
+      `(progn (q* :watch ,watch :connection ,connection)
+              (multi ,commands :connection ,connection)) ; TODO: commands => nilの場合の処理追加
+    `(multi ,commands :connection ,connection)))
+
+;; strings
 (defcmd2 :strings 2.0.0 :append (key value) :integer "Append a value to a key")
 (defcmd2 :strings 1.0.0 :decr (key) :integer "Decrement the integer value of a key by one")
 (defcmd2 :strings 1.0.0 :decrby (key decrement) :integer "Decrement the integer value of a key by the given number")
@@ -114,4 +131,11 @@
 (defcmd2 :strings 2.0.0 :setex (key seconds value) :true "Set the value and expiration of a key")
 (defcmd2 :strings 2.2.0 :setrange (key offset value) :integer "Overwrite part of a string at key starting at the specified offset")
 (defcmd2 :strings 2.2.0 :strlen (key) :integer "Get the length of the value stored in a key")
+
+;; transaction
+(defcmd2 :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
+(defcmd2 :transaction 1.2.0 :multi () :true "Mark the start of a transaction block")
+(defcmd2 :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
+
+
 
