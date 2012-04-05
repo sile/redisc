@@ -2,37 +2,12 @@
 
 (defparameter *default-connection* nil)
 
+;; TODO: 良い仕組みを考える
 (defun name-to-command (name &aux (name (symbol-name name)))
   (let ((p (position #\- name)))
     (if (null p)
         (list name)
       (list (subseq name 0 p) (subseq name (1+ p))))))
-
-;; TODO: redisのドキュメントを付与する
-#+C
-(defmacro defcmd (name arity result-type &key vary)
-  (let ((args (loop REPEAT arity COLLECT (gensym))))
-    ;; TODO: いろいろ整理
-    `(defun ,name (,@args ,@(if vary '(&rest v) ()) &aux (connection *default-connection*)) 
-       (multiple-value-bind (value ok) (request connection ,(car (name-to-command name))
-                                                (cl:append ',(cdr (name-to-command name))
-                                                       ,(if vary
-                                                            `(nconc (list ,@args) v)
-                                                          `(list ,@args))))
-         (if (not ok)
-             (values value ok)
-           (values (convert ,result-type value) ok))))))
-
-(defun convert (type value)
-  (ecase type
-    (:object value)
-    (:string value) ; TODO: assert
-    (:integer value) ; TODO: assert
-    (:boolean (ecase value (1 t) (0 nil)))
-    (:list value)
-    (:status value)
-    (:ok     (string= "OK" value)) ; TODO: assert
-    ))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *command-list* '()))
@@ -50,17 +25,13 @@
     return-type
     description))
 
-(defun symb (&rest args) ; XXX:
-  (intern (format nil "~{~a~}" args)))
-
 (eval-when (:compile-toplevel :load-toplevel)
-(defun ensure-list (x)
-  (if (atom x)
-      (if (null x)
-          x
-        (list x))
-    (cons (car x) (ensure-list (cdr x)))))
-)
+  (defun ensure-list (x)
+    (if (atom x)
+        (if (null x)
+            x
+          (list x))
+      (cons (car x) (ensure-list (cdr x))))))
 
 (defmacro defcmd (category version name args result-type description)
   (let ((connection (gensym))
@@ -72,7 +43,7 @@
                        :args ',args
                        :return-type ,result-type
                        :description ,description
-                       :fn (lambda (,connection ,vars &key pipe)
+                       :fn (lambda (,connection ,vars &key pipe) ;; TODO: nameが'xxx-yyy'形式の場合は、'xxx'部分をコマンド名にして、'yyy'は引数に付与する
                              (destructuring-bind ,args ,vars
                                (declare (ignore ,@(ensure-list args))))
                              (request ,connection ,name ,vars :pipe pipe))
@@ -82,61 +53,11 @@
 (defun get-cmd (name)
   (find name *command-list* :key #'cmd-name)) ; TODO: error-check
 
-(defun execute* (name args &key (connection *default-connection*))
-  (funcall (cmd-fn (get-cmd name)) connection args))
+(defun execute* (name args &key (connection *default-connection*) pipe)
+  (funcall (cmd-fn (get-cmd name)) connection args :pipe pipe))
 
 (defun execute (name &rest args)
   (execute* name args))
-
-#|
-(defun q* (name args &key (connection *default-connection*))
-  (funcall (cmd-fn (get-cmd name)) connection args))
-
-(defun q (name &rest args)
-  (q* name args))
-
-
-(defun multi (commands &key (connection *default-connection*))
-  (let ((*default-connection* connection))
-    (q :multi)
-    (pipe commands)
-    (q :exec)))
-
-(defmacro watch-multi ((&rest watch-keys) commands-exp &key (connection *default-connection*))
-  `(progn (q* :watch ,watch-keys :connection ,connection) ; TODO: connection gensym
-          (multi ,commands-exp :connection ,connection)))
-
-(defmacro multi* (commands &key (connection *default-connection*) watch)
-  (if watch
-      `(progn (q* :watch ,watch :connection ,connection)
-              (multi ,commands :connection ,connection)) ; TODO: commands => nilの場合の処理追加
-    `(multi ,commands :connection ,connection)))
-|#
-
-;; TODO: multi実行中に一つでもエラーになるコマンドがあれば、execは実行しない (discardしてエラー表示)
-
-;; (redisc:q '((:get 10) (:set 10 20) (:get 10)) :watch '(10)) => これに統一する
-;; (redisc:q* (:watch '(10 20) :connection con)
-;;   (let ((a (redisc:q '(:get 10))))
-;;   '((:get 10)
-;;     (:set 10 20)
-;;     (:get 20)))
-;;
-;; (redisc:with-connect (&optional connection) (:host ... :port ... :connect-timeout ....)
-;;   ...)
-;; (redisc:q :connection con :watch '(10) :commands (let (()) '((:get 10) (:set 10 20))))
-;; (redisc:q* (:watch '(10 20)) 
-
-#|
-pipe参考
-(defun pipe (commands &key (connection *default-connection*))
-  (loop FOR (name . args) IN commands
-        DO (funcall (cmd-fn (get-cmd name)) connection args :pipe t))
-  (let ((out (usocket:socket-stream connection)))
-    (force-output out)
-    (loop REPEAT (length commands)
-          COLLECT (multiple-value-list (read-reply out))))) ; 多値の代わりにエラーオブジェクトを返しても良いかもしれない
-|#
 
 (defun list-length-type (list)
   (cond ((null list)       :zero)
@@ -153,8 +74,13 @@ pipe参考
                   (values (list value) ok))))
       (:multi 
        (execute :multi)
-       ;; TODO: pipeにする
-       (loop FOR (name . args) IN commands DO (execute* name args)) ; TODO: 実行中に一つでもエラーになるコマンドがあれば、全体が失敗するようにする(バージョン不一致など)
+       (loop FOR (name . args) IN commands DO (execute* name args :pipe t))
+       ;; TODO: 整理
+       (let ((out (usocket:socket-stream connection)))
+         (force-output out)
+         (loop REPEAT (length commands)
+               ;; TODO: 実行中に一つでもエラーになるコマンドがあれば、全体が失敗するようにする(バージョン不一致など)
+               COLLECT (multiple-value-list (read-reply out))))
        (execute :exec)))))
 
 (defmacro q* ((&key watch (connection *default-connection*) timeout) commands-exp)
@@ -173,6 +99,32 @@ pipe参考
 
 (defun q! (name &rest args)
   (execute* name args))
+
+;; TODO: statusとtrueは怪しいので要チェック
+
+;; keys
+(defcmd :keys 1.0.0 :del (key . _) :integer "Delete a key")
+(defcmd :keys 2.6.0 :dump (key) :string "Return a serialized version of the value stored at the specified key")
+(defcmd :keys 1.0.0 :exists (key) :boolean "Determine if a key exists")
+(defcmd :keys 1.0.0 :expire (key seconds) :boolean "Set a key's time to live in seconds")
+(defcmd :keys 1.2.0 :expireat (key timestamp) :boolean "Set the expiration for a key as a UNIX timestamp")
+(defcmd :keys 1.0.0 :keys (pattern) :list "Find all keys matching the given pattern")
+(defcmd :keys 2.6.0 :migrate (host port key destinatino-db timeout) :status "Atomically transfer a key from a Redis instance to another one")
+(defcmd :keys 1.0.0 :move (key db) :boolean "Move a key to another database")
+(defcmd :keys 2.2.3 :object-refcount (key) :integer "Returns the number of references of the value associated with the specified key")
+(defcmd :keys 2.2.3 :object-encoding (key) :string "Returns the kind of internal representation used in order to store the value associated with a key")
+(defcmd :keys 2.2.3 :object-idletime (key) :integer "Returns the number of seconds since the object stored at the specified key is idle")
+(defcmd :keys 2.2.0 :persist (key) :boolean "Remove the expiration from a key")
+(defcmd :keys 2.6.0 :pexpire (key milliseconds) :boolean "Set a key's time to live in milliseconds")
+(defcmd :keys 2.6.0 :pexpireat (key milliseconds-timestamp) :boolean "Set the expiration for a key as a UNIX timestamp specified in milliseconds")
+(defcmd :keys 2.6.0 :pttl (key) :integer "Get the time to live for a key in milliseconds")
+(defcmd :keys 1.0.0 :randomkey () :string "Return a random key from the keyspace")
+(defcmd :keys 1.0.0 :rename (key newkey) :status "Rename a key")
+(defcmd :keys 1.0.0 :renamenx (key newkey) :boolean "Rename a key, only if the new key does not exist")
+(defcmd :keys 2.6.0 :restore (key ttl serialized-value) :status "Create a key using the provided serialized value, previosly obtained using DUMP")
+(defcmd :keys 1.0.0 :sort (key . _) :list "Sort the elements in a list, set or sorted set")
+(defcmd :keys 1.0.0 :ttl (key) :integer "Get the time to live for a key")
+(defcmd :keys 1.0.0 :type (key) :status "Determine the type stored at key")
 
 ;; strings
 (defcmd :strings 2.0.0 :append (key value) :integer "Append a value to a key")
@@ -201,3 +153,5 @@ pipe参考
 (defcmd :transaction 1.2.0 :multi () :true "Mark the start of a transaction block")
 (defcmd :transaction 2.2.0 :unwatch () :true "Forget about all watched keys")
 (defcmd :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
+
+
