@@ -197,6 +197,24 @@
 (defcmd :sets 1.0.0 :sunion (key . _) :list "Add multiple sets")
 (defcmd :sets 1.0.0 :sunionstore (destination key . _) :integer "Add multiple sets and store the resulting set in a key")
 
+;; sorted sets
+(defcmd :sorted-sets 1.2.0 :zadd (key score member . _) :integer "Add one or more members to a sorted set, or update its score if it already exists")
+(defcmd :sorted-sets 1.2.0 :zcard (key) :integer "Get the number of members in a sorted set")
+(defcmd :sorted-sets 2.0.0 :zcount (key min max) :integer "Count the members in a sorted set with scores within the given values")
+(defcmd :sorted-sets 1.2.0 :zincrby (key increment member) :number "Increment the score of a member in a sorted set")
+(defcmd :sorted-sets 2.0.0 :zinterstore (destination numkeys key . _) :integer "Intersect multiple sorted sets and store the resulting sorted set in a new key")
+(defcmd :sorted-sets 1.2.0 :zrange (key start stop . _) :list "Return a range of members in a sorted set, by index") ; TODO: できればwithscoreがついた時は、返す値の型を変えるようにしたい・・・
+(defcmd :sorted-sets 1.0.5 :zrangebyscore (key min max . _) :list "Return a range of members in a sorted set, by score")
+(defcmd :sorted-sets 2.0.0 :zrank (key member) :integer-or-null "Determine the index of a member in a sorted set")
+(defcmd :sorted-sets 1.2.0 :zrem (key member . _) :integer "Remove one or more members from a sorted set")
+(defcmd :sorted-sets 2.0.0 :zremrangebyrank (key start stop) :integer "Remove all members in a sorted set within the given indexes")
+(defcmd :sorted-sets 1.2.0 :zremrangebyscore (key min max) :integer "Remove all members in a sorted set within the given scores")
+(defcmd :sorted-sets 1.2.0 :zrevrange (key start stop . _) :list "Return a range of members in a sorted set, by index, with scores ordered from high to low")
+(defcmd :sorted-sets 2.2.0 :zrevrangebyscore (key max min . _) :list "Return a range of members in a sorted set, by score, with scores orderes from high to low")
+(defcmd :sorted-sets 2.0.0 :zrevrank (Key member) :integer-or-null "Determine the index of a member in a sorted set, with scores ordered from high to low")
+(defcmd :sorted-sets 1.2.0 :zscore (key member) :number "Get the score associated with the given member in a sorted set")
+(defcmd :sorted-sets 2.0.0 :zunionstore (destination numkeys key . _) :integer "Add multiple sorted sets and store the resulting sorted set in a new key")
+
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
