@@ -100,6 +100,11 @@
 (defun q! (name &rest args)
   (execute* name args))
 
+;; for pub/sub
+(defun listen-message (&key (connection *default-connection*) timeout)
+  (declare (ignore timeout))
+  (read-reply (usocket:socket-stream connection)))
+
 ;; TODO: statusとtrueは怪しいので要チェック
 
 ;; keys
@@ -216,7 +221,11 @@
 (defcmd :sorted-sets 2.0.0 :zunionstore (destination numkeys key . _) :integer "Add multiple sorted sets and store the resulting sorted set in a new key")
 
 ;; pub/sub
-;; TODO
+(defcmd :pub/sub 2.0.0 :psubscribe (pattern . _) :tuple3 "Listen for messages published to channels matching the given patterns")
+(defcmd :pub/sub 2.0.0 :publish (channel message) :integer "Post a message to a channel")
+(defcmd :pub/sub 2.0.0 :punsubscribe (pattern . _) :tuple3 "Stop listening for messages posted to channels matching the given patterns")
+(defcmd :pub/sub 2.0.0 :subscribe (channel . _) :tuple3 "Listen for messages published to the given channels")
+(defcmd :pub/sub 2.0.0 :unsubscribe (channel . _) :tuple3 "Stop listening for messages posted to the given channels")
 
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
@@ -234,3 +243,6 @@
 (defcmd :connection 1.0.0 :ping () :status "Ping the server")
 (defcmd :connection 1.0.0 :quit () :true "Close the connection")
 (defcmd :connection 1.0.0 :select (index) :status "Change the selected database for the current connection")
+
+;; server
+;; TODO

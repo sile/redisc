@@ -10,6 +10,7 @@
            multi multi* multi@ 
            pipe pipe* pipe@
            with-watch 
+           listen-message
 
            apropos
            apropos-list
