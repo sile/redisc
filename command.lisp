@@ -82,19 +82,19 @@
 (defun get-cmd (name)
   (find name *command-list* :key #'cmd-name)) ; TODO: error-check
 
+(defun execute* (name args &key (connection *default-connection*))
+  (funcall (cmd-fn (get-cmd name)) connection args))
+
+(defun execute (name &rest args)
+  (execute* name args))
+
+#|
 (defun q* (name args &key (connection *default-connection*))
   (funcall (cmd-fn (get-cmd name)) connection args))
 
 (defun q (name &rest args)
   (q* name args))
 
-(defun pipe (commands &key (connection *default-connection*))
-  (loop FOR (name . args) IN commands
-        DO (funcall (cmd-fn (get-cmd name)) connection args :pipe t))
-  (let ((out (usocket:socket-stream connection)))
-    (force-output out)
-    (loop REPEAT (length commands)
-          COLLECT (multiple-value-list (read-reply out))))) ; 多値の代わりにエラーオブジェクトを返しても良いかもしれない
 
 (defun multi (commands &key (connection *default-connection*))
   (let ((*default-connection* connection))
@@ -111,6 +111,68 @@
       `(progn (q* :watch ,watch :connection ,connection)
               (multi ,commands :connection ,connection)) ; TODO: commands => nilの場合の処理追加
     `(multi ,commands :connection ,connection)))
+|#
+
+;; TODO: multi実行中に一つでもエラーになるコマンドがあれば、execは実行しない (discardしてエラー表示)
+
+;; (redisc:q '((:get 10) (:set 10 20) (:get 10)) :watch '(10)) => これに統一する
+;; (redisc:q* (:watch '(10 20) :connection con)
+;;   (let ((a (redisc:q '(:get 10))))
+;;   '((:get 10)
+;;     (:set 10 20)
+;;     (:get 20)))
+;;
+;; (redisc:with-connect (&optional connection) (:host ... :port ... :connect-timeout ....)
+;;   ...)
+;; (redisc:q :connection con :watch '(10) :commands (let (()) '((:get 10) (:set 10 20))))
+;; (redisc:q* (:watch '(10 20)) 
+
+#|
+pipe参考
+(defun pipe (commands &key (connection *default-connection*))
+  (loop FOR (name . args) IN commands
+        DO (funcall (cmd-fn (get-cmd name)) connection args :pipe t))
+  (let ((out (usocket:socket-stream connection)))
+    (force-output out)
+    (loop REPEAT (length commands)
+          COLLECT (multiple-value-list (read-reply out))))) ; 多値の代わりにエラーオブジェクトを返しても良いかもしれない
+|#
+
+(defun list-length-type (list)
+  (cond ((null list)       :zero)
+        ((null (cdr list)) :one)
+        (t                 :multi)))
+        
+(defun q (commands &key (connection *default-connection*) timeout)
+  (declare (ignore timeout))
+  (let ((*default-connection* connection))
+    (ecase (list-length-type commands)
+      (:zero  (values nil t))
+      (:one   (destructuring-bind ((name . args)) commands
+                (multiple-value-bind (value ok) (execute name args)
+                  (values (list value) ok))))
+      (:multi 
+       (execute :multi)
+       ;; TODO: pipeにする
+       (loop FOR (name . args) IN commands DO (execute* name args)) ; TODO: 実行中に一つでもエラーになるコマンドがあれば、全体が失敗するようにする(バージョン不一致など)
+       (execute :exec)))))
+
+(defmacro q* ((&key watch (connection *default-connection*) timeout) commands-exp)
+  (let ((commands (gensym)))
+    `(if (null ,watch)
+         (q ,commands-exp :connection ,connection :timeout ,timeout)
+       (progn
+         (execute* :watch ,watch :connection ,connection) ; XXX: 多重評価
+         (let ((,commands ,commands-exp))
+           (ecase (list-length-type ,commands)
+             (:zero (execute* :unwatch '() :connection ,connection))
+             (:one  (execute* :multi '() :connection ,connection)
+                    (q ,commands :connection ,connection :timeout ,timeout) ; TODO: 返り値確認
+                    (execute* :exec '() :connection ,connection))
+             (:multi (q ,commands :connection ,connection :timeout ,timeout))))))))
+
+(defun q! (name &rest args)
+  (execute* name args))
 
 ;; strings
 (defcmd :strings 2.0.0 :append (key value) :integer "Append a value to a key")

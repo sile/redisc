@@ -5,8 +5,8 @@
            apropos apropos-list
            )
   (:export connect close
-           with-connect
-           q q* q@ 
+           with-connect with-default
+           q q* q@ q!
            multi multi* multi@ 
            pipe pipe* pipe@
            with-watch 
