@@ -134,9 +134,8 @@
 (defcmd :strings 2.2.0 :strlen (key) :integer "Get the length of the value stored in a key")
 
 ;; transaction
+(defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
 (defcmd :transaction 1.2.0 :multi () :true "Mark the start of a transaction block")
+(defcmd :transaction 2.2.0 :unwatch () :true "Forget about all watched keys")
 (defcmd :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
-
-
-
