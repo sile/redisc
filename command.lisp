@@ -147,11 +147,24 @@
 (defcmd :strings 2.2.0 :setrange (key offset value) :integer "Overwrite part of a string at key starting at the specified offset")
 (defcmd :strings 2.2.0 :strlen (key) :integer "Get the length of the value stored in a key")
 
+;; hashed
+(defcmd :hashes 2.0.0 :hdel (key field . _) :integer "Delete one or more hash fields")
+(defcmd :hashes 2.0.0 :hexists (key field) :boolean "Determine if a hash field exists")
+(defcmd :hashes 2.0.0 :hget (key field) :string "Get the value of a hash field")
+(defcmd :hashes 2.0.0 :hgetall (key) :list "Get all the fields and values in a hash")
+(defcmd :hashes 2.0.0 :hincrby (key field increment) :integer "Increment the integer value of a hash field by the given number")
+(defcmd :hashes 2.0.0 :hincrbyfloat (key field increment) :number "Increment the float value of a hash field by the given amount")
+(defcmd :hashes 2.0.0 :hkeys (key) :list "Get all the fields in a hash")
+(defcmd :hashes 2.0.0 :hlen (key) :integer "Get the number of fields in a hash")
+(defcmd :hashes 2.0.0 :hmget (key field . _) :list "Get the values of all the given hash fields")
+(defcmd :hashes 2.0.0 :hmset (key field value . _) :status "Set multiple hash fields to multiple values")
+(defcmd :hashes 2.0.0 :hset (key field value) :boolean "Set the string value of a hash field")
+(defcmd :hashes 2.0.0 :hsetnx (key field value) :boolean "Set the value of a hash field, only if the field does not exist")
+(defcmd :hashes 2.0.0 :hvals (key) :list "Get all the values in a hash")
+
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
 (defcmd :transaction 1.2.0 :multi () :true "Mark the start of a transaction block")
 (defcmd :transaction 2.2.0 :unwatch () :true "Forget about all watched keys")
 (defcmd :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
-
-
