@@ -43,10 +43,11 @@
                        :args ',args
                        :return-type ,result-type
                        :description ,description
-                       :fn (lambda (,connection ,vars &key pipe) ;; TODO: nameが'xxx-yyy'形式の場合は、'xxx'部分をコマンド名にして、'yyy'は引数に付与する
+                       :fn (lambda (,connection ,vars &key pipe) 
                              (destructuring-bind ,args ,vars
-                               (declare (ignore ,@(ensure-list args))))
-                             (request ,connection ,name ,vars :pipe pipe))
+                               (declare (ignore ,@(remove '&rest (ensure-list args)))))
+                             ;; TODO: 整理
+                             (request ,connection ,(car (name-to-command name)) (append ',(cdr (name-to-command name)) ,vars) :pipe pipe))
                        )
              *command-list*))))
 
@@ -83,6 +84,7 @@
                COLLECT (multiple-value-list (read-reply out))))
        (execute :exec)))))
 
+;; TODO: watchのネストを検出 => エラーを出す (最下層以外のwatchが無効になってしまうため)
 (defmacro q* ((&key watch (connection *default-connection*) timeout) commands-exp)
   (let ((commands (gensym)))
     `(if (null ,watch)
@@ -235,7 +237,7 @@
 (defcmd :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
 
 ;; scripting
-;; TODO
+;; UNSUPPORT
 
 ;; connection
 (defcmd :connection 1.0.0 :auth (password) :status "Authenticate to the server")
@@ -245,4 +247,24 @@
 (defcmd :connection 1.0.0 :select (index) :status "Change the selected database for the current connection")
 
 ;; server
-;; TODO
+(defcmd :server 1.0.0 :bgrewriteaof () :true "Asynchronously rewrite the append-only file")
+(defcmd :server 1.0.0 :bgsave () :status "Asynchronously save the dataset to disk")
+(defcmd :server 2.0.0 :config-get (parameter) :list "Get the value of a configuration parameter")
+(defcmd :server 2.0.0 :config-resetstat () :true "Reset the stats returned by INFO")
+(defcmd :server 2.0.0 :config-set (parameter value) :true "Set a configuration parameter to the given value")
+(defcmd :server 1.0.0 :dbsize () :integer "Return the number of keys in the selected database")
+(defcmd :server 1.0.0 :debug-object (key) :status "Get debugging information about a key")
+(defcmd :server 1.0.0 :debug-segfault () :status "Make the server crash")
+(defcmd :server 1.0.0 :flushall () :status "Remove all keys from all database")
+(defcmd :server 1.0.0 :flushdb () :status "Remove all keys from the current database")
+(defcmd :server 1.0.0 :info () :string "Get information and statistics about the server")
+(defcmd :server 1.0.0 :lastsave () :integer "Get the UNIX time stamp of the last successful save to disk")
+;; unsupport: (defcmd :server 0.0.0 :monitor () "Listen for all requests received by the server in real time")
+(defcmd :server 1.0.0 :save () :status "Synchronously save the dataset to disk")
+(defcmd :server 1.0.0 :shutdown (&rest _) :status "Synchronously save the dataset to disk and then shut down the server")
+(defcmd :server 1.0.0 :slaveof (host port) :status "Make the server a slave of another instance, or promote it as master")
+(defcmd :server 2.2.12 :slowlog-get (&rest _) :list "Return entries in the slow log") ; TODO: deply nested multi bulk replies対応
+(defcmd :server 2.2.12 :slowlog-len () :integer "Get the length of the slow log")
+(defcmd :server 2.2.12 :slowlog-reset () :status "Reset the slow log")
+;; unsupport: (defcmd :server 0.0.0 :sync () :any "Internal command used for replication")
+(defcmd :server 2.6.0 :time () :tuple2 "Return the current server time")
