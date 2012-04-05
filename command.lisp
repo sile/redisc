@@ -3,7 +3,7 @@
 (defvar *default-connection* nil)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *command-list* '()))
+  (defparameter *command-list* (make-hash-table :test 'eq)))
 
 (deftype command-category () '())
 (deftype command-return-type () '())
@@ -40,25 +40,26 @@
 (defmacro defcmd (category version name args result-type description)
   (let ((connection (gensym))
         (vars (gensym))) ; XXX:
-    `(progn 
-       (push (make-cmd :name ,name
-                       :version ,(symbol-name version)
-                       :category ,category
-                       :args ',args
-                       :return-type ,result-type
-                       :description ,description
-                       :fn (lambda (,connection ,vars &key pipe) 
-                             (destructuring-bind ,args ,vars
-                               (declare (ignore ,@(remove '&rest (ensure-list args)))))
-                             ,(case (name-type name)
-                                (:normal  `(request ,connection ,name ,vars :pipe pipe))
-                                (:prepend `(request ,connection ,(car (div-name name)) (cons ,(cdr (div-name name)) ,vars) :pipe pipe))
-                                (:append  `(request ,connection ,(car (div-name name)) (append ,vars '(,(cdr (div-name name)))) :pipe pipe))))
-                       )
-             *command-list*))))
+    `(setf (gethash ,name *command-list*)
+           (make-cmd :name ,name
+                     :version ,(symbol-name version)
+                     :category ,category
+                     :args ',args
+                     :return-type ,result-type
+                     :description ,description
+                     :fn (lambda (,connection ,vars &key pipe) 
+                           (destructuring-bind ,args ,vars
+                             (declare (ignore ,@(remove '&rest (ensure-list args)))))
+                           ,(case (name-type name)
+                              (:normal  `(request ,connection ,name ,vars :pipe pipe))
+                              (:prepend `(request ,connection ,(car (div-name name)) (cons ,(cdr (div-name name)) ,vars) :pipe pipe))
+                              (:append  `(request ,connection ,(car (div-name name)) (append ,vars '(,(cdr (div-name name)))) :pipe pipe))))))))
 
 (defun get-cmd (name)
-  (find name *command-list* :key #'cmd-name)) ; TODO: error-check
+  (let ((cmd (gethash name *command-list*)))
+    (assert cmd () "Unknown command: ~a" name) ; TODO: 例外ではなくエラーステータスを返すようにする
+    cmd))
+;; or => 全体的に例外を投げる方針に変更する (こっちかな・・・)
 
 ;; TODO: assert
 (defun convert-result (value type)
@@ -82,7 +83,7 @@
           (pipe (assert (string= value "QUEUED") () "TODO: message")
                 (values :queued t))
           (t
-           (values (convert-result value (cmd-return-type cmd)))))))
+           (values (convert-result value (cmd-return-type cmd)) t)))))
 
 (defun execute (name &rest args)
   (execute* name args))
@@ -112,13 +113,13 @@
        (execute :exec)))))
 
 ;; TODO: watchのネストを検出 => エラーを出す (最下層以外のwatchが無効になってしまうため)
-(defmacro q* ((&key watch (connection *default-connection*) timeout) commands-exp)
+(defmacro q* ((&key watch (connection *default-connection*) timeout) &body commands-exp)
   (let ((commands (gensym)))
     `(if (null ,watch)
          (q ,commands-exp :connection ,connection :timeout ,timeout)
        (progn
          (execute* :watch ,watch :connection ,connection) ; XXX: 多重評価
-         (let ((,commands ,commands-exp))
+         (let ((,commands (locally ,@commands-exp)))
            (ecase (list-length-type ,commands)
              (:zero (execute* :unwatch '() :connection ,connection))
              (:one  (execute* :multi '() :connection ,connection)
@@ -126,11 +127,11 @@
                     (execute* :exec '() :connection ,connection))
              (:multi (q ,commands :connection ,connection :timeout ,timeout))))))))
 
-(defun q! (name &rest args)
+(defun cmd (name &rest args)
   (execute* name args))
 
 ;; for pub/sub
-(defun listen-message (&key (connection *default-connection*) timeout)
+(defun recieve (&key (connection *default-connection*) timeout)
   (declare (ignore timeout))
   (read-reply (usocket:socket-stream connection)))
 
