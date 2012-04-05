@@ -1,13 +1,6 @@
 (in-package :redisc)
 
-(defparameter *default-connection* nil)
-
-;; TODO: 良い仕組みを考える
-(defun name-to-command (name &aux (name (symbol-name name)))
-  (let ((p (position #\- name)))
-    (if (null p)
-        (list name)
-      (list (subseq name 0 p) (subseq name (1+ p))))))
+(defvar *default-connection* nil)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *command-list* '()))
