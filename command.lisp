@@ -181,6 +181,22 @@
 (defcmd :lists 1.0.0 :rpush (key value . _) :integer "Append one or multiple values to a list")
 (defcmd :lists 2.2.0 :rpushx (key value) :integer "Append a value to a list, only if the list exists")
 
+;; sets
+(defcmd :sets 1.0.0 :sadd (key member . _) :integer "Add one or more members to a set")
+(defcmd :sets 1.0.0 :scard (key) :integer "Get the number of members in a set")
+(defcmd :sets 1.0.0 :sdiff (key . _) :list "Subtract multiple sets")
+(defcmd :sets 1.0.0 :sdiffstore (destination key . _) :integer "Subtract multiple sets and store the resulting set in a key")
+(defcmd :sets 1.0.0 :sinter (key . _) :list "Intersect multiple sets")
+(defcmd :sets 1.0.0 :sinterstore (destination key . _) :integer "Intersect multiple sets and store the resulting set in a key")
+(defcmd :sets 1.0.0 :sismember (key member) :boolean "Determine if a given value is a member of a set")
+(defcmd :sets 1.0.0 :smembers (key) :list "Get all members in a set")
+(defcmd :sets 1.0.0 :smove (source destination member) :boolean "Move a member from one set to another")
+(defcmd :sets 1.0.0 :spop (key) :string "Remove and return a random member from a set")
+(defcmd :sets 1.0.0 :srandmember (key) :string "Get a random member from a set")
+(defcmd :sets 1.0.0 :srem (key member . _) :integer "Remove one or more members from a set")
+(defcmd :sets 1.0.0 :sunion (key . _) :list "Add multiple sets")
+(defcmd :sets 1.0.0 :sunionstore (destination key . _) :integer "Add multiple sets and store the resulting set in a key")
+
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
