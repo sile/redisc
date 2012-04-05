@@ -215,9 +215,22 @@
 (defcmd :sorted-sets 1.2.0 :zscore (key member) :number "Get the score associated with the given member in a sorted set")
 (defcmd :sorted-sets 2.0.0 :zunionstore (destination numkeys key . _) :integer "Add multiple sorted sets and store the resulting sorted set in a new key")
 
+;; pub/sub
+;; TODO
+
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
 (defcmd :transaction 1.2.0 :multi () :true "Mark the start of a transaction block")
 (defcmd :transaction 2.2.0 :unwatch () :true "Forget about all watched keys")
 (defcmd :transaction 2.2.0 :watch (key . _) :true "Watch the given keys to determine execution of the MULTI/EXEC block")
+
+;; scripting
+;; TODO
+
+;; connection
+(defcmd :connection 1.0.0 :auth (password) :status "Authenticate to the server")
+(defcmd :connection 1.0.0 :echo (message) :string "Echo the given string")
+(defcmd :connection 1.0.0 :ping () :status "Ping the server")
+(defcmd :connection 1.0.0 :quit () :true "Close the connection")
+(defcmd :connection 1.0.0 :select (index) :status "Change the selected database for the current connection")
