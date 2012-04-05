@@ -31,8 +31,19 @@
         (if (null x)
             x
           (list x))
-      (cons (car x) (ensure-list (cdr x))))))
+      (cons (car x) (ensure-list (cdr x)))))
 
+(defun name-type (name)
+  (let ((s (symbol-name name)))
+    (cond ((find #\- s) :prepend)
+          ((find #\@ s) :append)
+          (t :normal))))
+
+(defun div-name (name &aux (s (symbol-name name)))
+  (let ((p (position-if (lambda (c) (or (char= #\@ c) (char= #\- c))) s)))
+    (cons (intern (subseq s 0 p) :keyword) (intern (subseq s (1+ p)) :keyword))))
+)
+  
 (defmacro defcmd (category version name args result-type description)
   (let ((connection (gensym))
         (vars (gensym))) ; XXX:
@@ -46,16 +57,39 @@
                        :fn (lambda (,connection ,vars &key pipe) 
                              (destructuring-bind ,args ,vars
                                (declare (ignore ,@(remove '&rest (ensure-list args)))))
-                             ;; TODO: 整理
-                             (request ,connection ,(car (name-to-command name)) (append ',(cdr (name-to-command name)) ,vars) :pipe pipe))
+                             ,(case (name-type name)
+                                (:normal  `(request ,connection ,name ,vars :pipe pipe))
+                                (:prepend `(request ,connection ,(car (div-name name)) (cons ,(cdr (div-name name)) ,vars) :pipe pipe))
+                                (:append  `(request ,connection ,(car (div-name name)) (append ,vars '(,(cdr (div-name name)))) :pipe pipe))))
                        )
              *command-list*))))
 
 (defun get-cmd (name)
   (find name *command-list* :key #'cmd-name)) ; TODO: error-check
 
-(defun execute* (name args &key (connection *default-connection*) pipe)
-  (funcall (cmd-fn (get-cmd name)) connection args :pipe pipe))
+;; TODO: assert
+(defun convert-result (value type)
+  (ecase type
+    (:string value)
+    (:integer value)
+    (:integer-or-null value)
+    (:number (read-from-string value)) ; XXX:
+    (:list value)
+    (:string-number-list 
+     (loop FOR (s i) ON value BY #'cddr APPEND (list s (read-from-string i))))
+    (:state (intern value :keyword))
+    (:boolean (= value 1))
+    (:tuple2 value) ; TODO: 細分化
+    (:tuple3 value) ; TODO: 細分化
+    (:true t)))
+  
+(defun execute* (name args &key (connection *default-connection*) pipe &aux (cmd (get-cmd name)))
+  (multiple-value-bind (value ok) (funcall (cmd-fn cmd) connection args :pipe pipe)
+    (cond ((not ok) (values value nil))
+          (pipe (assert (string= value "QUEUED") () "TODO: message")
+                (values :queued t))
+          (t
+           (values (convert-result value (cmd-return-type cmd)))))))
 
 (defun execute (name &rest args)
   (execute* name args))
@@ -71,7 +105,7 @@
     (ecase (list-length-type commands)
       (:zero  (values nil t))
       (:one   (destructuring-bind ((name . args)) commands
-                (multiple-value-bind (value ok) (execute name args)
+                (multiple-value-bind (value ok) (execute* name args)
                   (values (list value) ok))))
       (:multi 
        (execute :multi)
@@ -210,14 +244,18 @@
 (defcmd :sorted-sets 2.0.0 :zcount (key min max) :integer "Count the members in a sorted set with scores within the given values")
 (defcmd :sorted-sets 1.2.0 :zincrby (key increment member) :number "Increment the score of a member in a sorted set")
 (defcmd :sorted-sets 2.0.0 :zinterstore (destination numkeys key . _) :integer "Intersect multiple sorted sets and store the resulting sorted set in a new key")
-(defcmd :sorted-sets 1.2.0 :zrange (key start stop . _) :list "Return a range of members in a sorted set, by index") ; TODO: できればwithscoreがついた時は、返す値の型を変えるようにしたい・・・
+(defcmd :sorted-sets 1.2.0 :zrange (key start stop) :list "Return a range of members in a sorted set, by index")
+(defcmd :sorted-sets 1.2.0 :zrange@withscores (key start stop) :string-number-list "Return a range of members in a sorted set, by index")
 (defcmd :sorted-sets 1.0.5 :zrangebyscore (key min max . _) :list "Return a range of members in a sorted set, by score")
+(defcmd :sorted-sets 1.0.5 :zrangebyscore@withscores (key min max . _) :string-number-list "Return a range of members in a sorted set, by score")
 (defcmd :sorted-sets 2.0.0 :zrank (key member) :integer-or-null "Determine the index of a member in a sorted set")
 (defcmd :sorted-sets 1.2.0 :zrem (key member . _) :integer "Remove one or more members from a sorted set")
 (defcmd :sorted-sets 2.0.0 :zremrangebyrank (key start stop) :integer "Remove all members in a sorted set within the given indexes")
 (defcmd :sorted-sets 1.2.0 :zremrangebyscore (key min max) :integer "Remove all members in a sorted set within the given scores")
-(defcmd :sorted-sets 1.2.0 :zrevrange (key start stop . _) :list "Return a range of members in a sorted set, by index, with scores ordered from high to low")
+(defcmd :sorted-sets 1.2.0 :zrevrange (key start stop) :list "Return a range of members in a sorted set, by index, with scores ordered from high to low")
+(defcmd :sorted-sets 1.2.0 :zrevrange@withscores (key start stop) :string-number-list "Return a range of members in a sorted set, by index, with scores ordered from high to low")
 (defcmd :sorted-sets 2.2.0 :zrevrangebyscore (key max min . _) :list "Return a range of members in a sorted set, by score, with scores orderes from high to low")
+(defcmd :sorted-sets 2.2.0 :zrevrangebyscore@withscores (key max min . _) :string-number-list "Return a range of members in a sorted set, by score, with scores orderes from high to low")
 (defcmd :sorted-sets 2.0.0 :zrevrank (Key member) :integer-or-null "Determine the index of a member in a sorted set, with scores ordered from high to low")
 (defcmd :sorted-sets 1.2.0 :zscore (key member) :number "Get the score associated with the given member in a sorted set")
 (defcmd :sorted-sets 2.0.0 :zunionstore (destination numkeys key . _) :integer "Add multiple sorted sets and store the resulting sorted set in a new key")
