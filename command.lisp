@@ -162,6 +162,25 @@
 (defcmd :hashes 2.0.0 :hsetnx (key field value) :boolean "Set the value of a hash field, only if the field does not exist")
 (defcmd :hashes 2.0.0 :hvals (key) :list "Get all the values in a hash")
 
+;; lists
+(defcmd :lists 2.0.0 :blpop (key . _) :tuple2 "Remove and get the first element in a list, or block until one is available")
+(defcmd :lists 2.0.0 :brpop (key . _) :tuple2 "Remove and get the last element in a list, or block until one is available")
+(defcmd :lists 2.2.0 :brpoplpush (source destination timeout) :string "Pop a value from a list, push it to another list and return it; or block until one is available")
+(defcmd :lists 1.0.0 :lindex (key index) :string "Get an element from a list by its index")
+(defcmd :lists 2.2.0 :linsert (key before-or-after pivot value) :integer "Insert an element before or after another element in a list")
+(defcmd :lists 1.0.0 :llen (key) :integer "Get the length of a list")
+(defcmd :lists 1.0.0 :lpop (key) :string "Remove and get the first element in a list")
+(defcmd :lists 1.0.0 :lpush (key value . _) :integer "Prepend one or multiple values to a list")
+(defcmd :lists 2.2.0 :lpushx (key value) :integer "Prepend a value to a list, only if the list exists")
+(defcmd :lists 1.0.0 :lrange (key start stop) :list "Get a range of elements from a list")
+(defcmd :lists 1.0.0 :lrem (key count value) :integer "Remove elements from a list")
+(defcmd :lists 1.0.0 :lset (key index value) :status "Set the value of an element in a list by its index")
+(defcmd :lists 1.0.0 :ltrim (key start stop) :status "Trim a list to the specified range")
+(defcmd :lists l.0.0 :rpop (key) :string "Remove and get the last element in a list")
+(defcmd :lists 1.2.0 :rpoplpush (source destination) :string "Remove the last element in a list, append it to another list and return it")
+(defcmd :lists 1.0.0 :rpush (key value . _) :integer "Append one or multiple values to a list")
+(defcmd :lists 2.2.0 :rpushx (key value) :integer "Append a value to a list, only if the list exists")
+
 ;; transaction
 (defcmd :transaction 2.0.0 :discard () :true "Discard all commands issued after MULTI")
 (defcmd :transaction 1.2.0 :exec () :list "Execute all commands issued after multi")
