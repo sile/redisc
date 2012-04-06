@@ -110,7 +110,12 @@
          (loop REPEAT (length commands)
                ;; TODO: 実行中に一つでもエラーになるコマンドがあれば、全体が失敗するようにする(バージョン不一致など)
                COLLECT (multiple-value-list (read-reply out))))
-       (execute :exec)))))
+       (let ((types (loop FOR (name . args) IN commands COLLECT (cmd-return-type (get-cmd name))))
+             (result (execute :exec))) ; XXX: suppress second value
+         (values (loop FOR type IN types 
+                       FOR x    IN result 
+                       COLLECT (convert-result x type))
+                 t)))))) 
 
 ;; TODO: watchのネストを検出 => エラーを出す (最下層以外のwatchが無効になってしまうため)
 (defmacro q* ((&key watch (connection *default-connection*) timeout) &body commands-exp)
