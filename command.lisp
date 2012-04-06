@@ -184,6 +184,7 @@
 (defcmd :strings 1.0.0 :set (key value) :true "Set the string value of a key")
 (defcmd :strings 2.2.0 :setbit (key offset value) :integer "Sets or clears the bit at offset in the string value stored at key")
 (defcmd :strings 2.0.0 :setex (key seconds value) :true "Set the value and expiration of a key")
+(defcmd :strings 1.0.0 :setnx (key value) :boolean "Set the value of a key, only if the key does not exist")
 (defcmd :strings 2.2.0 :setrange (key offset value) :integer "Overwrite part of a string at key starting at the specified offset")
 (defcmd :strings 2.2.0 :strlen (key) :integer "Get the length of the value stored in a key")
 
