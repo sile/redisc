@@ -71,7 +71,7 @@
     (:list value)
     (:string-number-list 
      (loop FOR (s i) ON value BY #'cddr APPEND (list s (read-from-string i))))
-    (:state (intern value :keyword))
+    (:status (intern value :keyword))
     (:boolean (= value 1))
     (:tuple2 value) ; TODO: 細分化
     (:tuple3 value) ; TODO: 細分化
