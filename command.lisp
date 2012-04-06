@@ -121,7 +121,7 @@
 (defmacro q* ((&key watch (connection *default-connection*) timeout) &body commands-exp)
   (let ((commands (gensym)))
     `(if (null ,watch)
-         (q ,commands-exp :connection ,connection :timeout ,timeout)
+         (q (locally ,@commands-exp) :connection ,connection :timeout ,timeout)
        (progn
          (execute* :watch ,watch :connection ,connection) ; XXX: 多重評価
          (let ((,commands (locally ,@commands-exp)))
