@@ -8,6 +8,7 @@
                    (list    (apply #'args-to-octets a))
                    (symbol  (string-to-octets (symbol-name a)))
                    (integer (string-to-octets (princ-to-string a)))
+                   (float   (string-to-octets (princ-to-string a)))
                    (string  (string-to-octets a))
                    (octets  a)))))
 
