@@ -118,7 +118,7 @@
                  t)))))) 
 
 ;; TODO: watchのネストを検出 => エラーを出す (最下層以外のwatchが無効になってしまうため)
-(defmacro q* ((&key watch (connection *default-connection*) timeout) &body commands-exp)
+(defmacro q* ((&key watch (connection '*default-connection*) timeout) &body commands-exp)
   (let ((commands (gensym)))
     `(if (null ,watch)
          (q (locally ,@commands-exp) :connection ,connection :timeout ,timeout)
